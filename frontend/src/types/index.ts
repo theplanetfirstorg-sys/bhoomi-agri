@@ -1,3 +1,5 @@
+import type { Polygon } from 'geojson';
+
 export type UserRole = 'farmer' | 'admin';
 export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'cancelled';
 
@@ -35,7 +37,7 @@ export interface Plot {
   id: string;
   farm_id: string;
   name: string;
-  boundary_geojson: GeoJSON.Polygon | null;
+  boundary_geojson: Polygon | null;
   area: number | null;
   area_unit: string;
   orientation: string | null;

@@ -89,7 +89,7 @@ export async function chat(options: ChatOptions): Promise<ChatResult> {
       {
         type: 'web_search_20250305',
         name: 'web_search',
-      } as Anthropic.Tool,
+      } as unknown as Anthropic.Tool,
     ],
   });
 
