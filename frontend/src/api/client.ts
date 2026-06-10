@@ -3,8 +3,8 @@ import { useAuthStore } from '../hooks/useAuth';
 
 // In production (Railway), VITE_API_URL points to the backend service URL.
 // In dev, Vite proxies /api → localhost:3001.
-const BASE_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api/v1`
+const BASE_URL = (import.meta as { env: Record<string, string> }).env.VITE_API_URL
+  ? `${(import.meta as { env: Record<string, string> }).env.VITE_API_URL}/api/v1`
   : '/api/v1';
 
 const api = axios.create({
@@ -14,7 +14,10 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers = config.headers ?? {};
+    (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -48,7 +51,9 @@ api.interceptors.response.use(
       }
 
       const newToken = await refreshPromise;
-      original.headers = { ...original.headers, Authorization: `Bearer ${newToken}` };
+      if (original.headers) {
+        (original.headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
+      }
       return api(original);
     }
 

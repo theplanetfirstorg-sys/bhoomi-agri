@@ -4,9 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Send, Paperclip, X, MessageCircle, Plus, Leaf } from 'lucide-react';
 import { advisorApi } from '../api/advisor';
 import { ConversationMessage } from '../types';
-import ReactMarkdown from 'react-markdown';
-
-// Fallback renderer if react-markdown not installed
 function MessageContent({ content }: { content: string }) {
   return (
     <div className="prose prose-sm max-w-none text-inherit">
