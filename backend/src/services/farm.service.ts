@@ -15,40 +15,27 @@ export async function getFarmById(id: string, userId: string): Promise<Farm | nu
   );
 }
 
-export async function createFarm(
-  userId: string,
-  data: Partial<Farm>
-): Promise<Farm> {
+export async function createFarm(userId: string, data: Partial<Farm>): Promise<Farm> {
   const { name, latitude, longitude, region, address, total_area, area_unit, soil_type, farming_type, elevation_m, notes } = data;
-
-  const locationExpr = latitude && longitude
-    ? `ST_SetSRID(ST_MakePoint($7, $8), 4326)`
-    : 'NULL';
-
-  const params = [
-    userId, name, region ?? null, address ?? null,
-    total_area ?? null, area_unit ?? 'perches',
-    longitude ?? null, latitude ?? null,
-    soil_type ?? 'unknown', farming_type ?? 'home_garden',
-    elevation_m ?? null, notes ?? null,
-  ];
 
   const farm = await queryOne<Farm>(
     `INSERT INTO farms (user_id, name, region, address, total_area, area_unit,
-       longitude, latitude, location, soil_type, farming_type, elevation_m, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${locationExpr}, $9, $10, $11, $12)
+       latitude, longitude, soil_type, farming_type, elevation_m, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING *`,
-    params
+    [
+      userId, name, region ?? null, address ?? null,
+      total_area ?? null, area_unit ?? 'perches',
+      latitude ?? null, longitude ?? null,
+      soil_type ?? 'unknown', farming_type ?? 'home_garden',
+      elevation_m ?? null, notes ?? null,
+    ]
   );
 
   return farm!;
 }
 
-export async function updateFarm(
-  id: string,
-  userId: string,
-  data: Partial<Farm>
-): Promise<Farm | null> {
+export async function updateFarm(id: string, userId: string, data: Partial<Farm>): Promise<Farm | null> {
   const { name, latitude, longitude, region, address, total_area, area_unit, soil_type, farming_type, elevation_m, notes } = data;
 
   return queryOne<Farm>(
@@ -56,8 +43,6 @@ export async function updateFarm(
        name = COALESCE($3, name),
        latitude = COALESCE($4, latitude),
        longitude = COALESCE($5, longitude),
-       location = CASE WHEN $4 IS NOT NULL AND $5 IS NOT NULL
-                  THEN ST_SetSRID(ST_MakePoint($5, $4), 4326) ELSE location END,
        region = COALESCE($6, region),
        address = COALESCE($7, address),
        total_area = COALESCE($8, total_area),
@@ -74,7 +59,7 @@ export async function updateFarm(
 
 export async function deleteFarm(id: string, userId: string): Promise<boolean> {
   const result = await query(
-    "UPDATE farms SET is_active = FALSE WHERE id = $1 AND user_id = $2",
+    'UPDATE farms SET is_active = FALSE WHERE id = $1 AND user_id = $2',
     [id, userId]
   );
   return result.length > 0;
@@ -101,12 +86,7 @@ export async function getPlotById(id: string, userId: string): Promise<Plot | nu
   );
 }
 
-export async function createPlot(
-  farmId: string,
-  userId: string,
-  data: Partial<Plot>
-): Promise<Plot> {
-  // Verify farm belongs to user
+export async function createPlot(farmId: string, userId: string, data: Partial<Plot>): Promise<Plot> {
   const farm = await queryOne('SELECT id FROM farms WHERE id = $1 AND user_id = $2', [farmId, userId]);
   if (!farm) throw new Error('Farm not found');
 
@@ -116,29 +96,19 @@ export async function createPlot(
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING *`,
     [
-      farmId,
-      data.name,
+      farmId, data.name,
       data.boundary_geojson ? JSON.stringify(data.boundary_geojson) : null,
-      data.area ?? null,
-      data.area_unit ?? 'perches',
-      data.orientation ?? null,
-      data.sun_exposure ?? null,
-      data.drainage ?? null,
-      data.irrigation_method ?? null,
-      data.water_source ?? null,
-      data.soil_ph ?? null,
-      data.notes ?? null,
+      data.area ?? null, data.area_unit ?? 'perches',
+      data.orientation ?? null, data.sun_exposure ?? null,
+      data.drainage ?? null, data.irrigation_method ?? null,
+      data.water_source ?? null, data.soil_ph ?? null, data.notes ?? null,
     ]
   );
 
   return plot!;
 }
 
-export async function updatePlot(
-  id: string,
-  userId: string,
-  data: Partial<Plot>
-): Promise<Plot | null> {
+export async function updatePlot(id: string, userId: string, data: Partial<Plot>): Promise<Plot | null> {
   return queryOne<Plot>(
     `UPDATE plots SET
        name = COALESCE($3, name),

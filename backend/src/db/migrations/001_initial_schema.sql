@@ -1,6 +1,4 @@
--- Enable PostGIS for geographic data and TimescaleDB for IoT time-series
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- ─────────────────────────────────────────
 -- USERS
@@ -80,7 +78,6 @@ CREATE TABLE farms (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name         TEXT NOT NULL,
-  location     GEOMETRY(POINT, 4326),   -- lat/lng as PostGIS point
   latitude     NUMERIC(10,7),
   longitude    NUMERIC(10,7),
   region       TEXT,                    -- e.g. "Western Province", "Kandy"
@@ -97,7 +94,6 @@ CREATE TABLE farms (
 );
 
 CREATE INDEX idx_farms_user_id ON farms(user_id);
-CREATE INDEX idx_farms_location ON farms USING GIST(location);
 
 -- ─────────────────────────────────────────
 -- PLOTS
