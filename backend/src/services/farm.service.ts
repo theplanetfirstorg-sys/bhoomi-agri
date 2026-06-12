@@ -86,9 +86,55 @@ export async function getPlotById(id: string, userId: string): Promise<Plot | nu
   );
 }
 
+async function checkPlotAreaAllowance(farmId: string, newAreaPerches: number, excludePlotId?: string): Promise<void> {
+  const farm = await queryOne<{ total_area: string | null; area_unit: string }>(
+    'SELECT total_area, area_unit FROM farms WHERE id = $1',
+    [farmId]
+  );
+  if (!farm?.total_area) return; // no farm area set — skip check
+
+  // Convert farm total_area to perches
+  const toPerches = (value: number, unit: string) => {
+    switch (unit) {
+      case 'acres':    return value * 160;
+      case 'hectares': return value * 395.369;
+      case 'sqm':      return value / 25.2929;
+      default:         return value; // perches
+    }
+  };
+
+  const farmTotalPerches = toPerches(parseFloat(farm.total_area), farm.area_unit);
+
+  const usedRow = await queryOne<{ used: string }>(
+    `SELECT COALESCE(SUM(
+       CASE area_unit
+         WHEN 'acres'    THEN area * 160
+         WHEN 'hectares' THEN area * 395.369
+         WHEN 'sqm'      THEN area / 25.2929
+         ELSE area
+       END
+     ), 0)::text AS used
+     FROM plots
+     WHERE farm_id = $1 AND is_active = TRUE ${excludePlotId ? 'AND id != $2' : ''}`,
+    excludePlotId ? [farmId, excludePlotId] : [farmId]
+  );
+
+  const usedPerches = parseFloat(usedRow?.used ?? '0');
+  if (usedPerches + newAreaPerches > farmTotalPerches) {
+    const remaining = Math.max(0, farmTotalPerches - usedPerches);
+    throw new Error(
+      `Plot area exceeds available farm area. Farm has ${remaining.toFixed(2)} perches remaining (farm total: ${farmTotalPerches.toFixed(2)} perches).`
+    );
+  }
+}
+
 export async function createPlot(farmId: string, userId: string, data: Partial<Plot>): Promise<Plot> {
   const farm = await queryOne('SELECT id FROM farms WHERE id = $1 AND user_id = $2', [farmId, userId]);
   if (!farm) throw new Error('Farm not found');
+
+  if (data.area) {
+    await checkPlotAreaAllowance(farmId, data.area, undefined);
+  }
 
   const plot = await queryOne<Plot>(
     `INSERT INTO plots (farm_id, name, boundary_geojson, area, area_unit, orientation,
@@ -109,6 +155,11 @@ export async function createPlot(farmId: string, userId: string, data: Partial<P
 }
 
 export async function updatePlot(id: string, userId: string, data: Partial<Plot>): Promise<Plot | null> {
+  if (data.area) {
+    const existing = await queryOne<{ farm_id: string }>('SELECT farm_id FROM plots WHERE id = $1', [id]);
+    if (existing) await checkPlotAreaAllowance(existing.farm_id, data.area, id);
+  }
+
   return queryOne<Plot>(
     `UPDATE plots SET
        name = COALESCE($3, name),
