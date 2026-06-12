@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -57,9 +59,18 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', version: '1.0.0', service: 'bhoomi-agri-api' });
 });
 
-app.use((_req, res) => {
-  res.status(404).json({ error: 'Not found' });
-});
+// Serve frontend static files if built
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  app.use((_req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
+}
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err.stack);
