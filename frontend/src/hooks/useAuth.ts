@@ -10,16 +10,14 @@ interface AuthState {
   setTokens: (accessToken: string, refreshToken: string) => void;
   setUser: (user: User) => void;
   logout: () => void;
-  isAuthenticated: boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
-      get isAuthenticated() { return !!get().accessToken; },
       setAuth: (user, accessToken, refreshToken) =>
         set({ user, accessToken, refreshToken }),
       setTokens: (accessToken, refreshToken) =>
@@ -27,7 +25,14 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       logout: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
-    { name: 'bhoomi-auth', partialize: (s) => ({ refreshToken: s.refreshToken }) }
+    {
+      name: 'bhoomi-auth',
+      partialize: (s) => ({
+        user: s.user,
+        accessToken: s.accessToken,
+        refreshToken: s.refreshToken,
+      }),
+    }
   )
 );
 
