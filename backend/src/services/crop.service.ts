@@ -80,7 +80,7 @@ export async function updateCropStatus(
 
 export async function updateCrop(id: string, userId: string, data: Partial<Crop>): Promise<Crop | null> {
   const { crop_type, variety, planting_date, expected_harvest_date, growing_method,
-    seed_source, goal, status, quantity_planted, quantity_unit, fertiliser_used, notes } = data;
+    seed_source, goal, status, quantity_planted, quantity_unit, notes } = data;
 
   return queryOne<Crop>(
     `UPDATE crops SET
@@ -94,14 +94,12 @@ export async function updateCrop(id: string, userId: string, data: Partial<Crop>
        status = COALESCE($10, status),
        quantity_planted = COALESCE($11, quantity_planted),
        quantity_unit = COALESCE($12, quantity_unit),
-       fertiliser_used = COALESCE($13, fertiliser_used),
-       notes = COALESCE($14, notes)
+       notes = COALESCE($13, notes)
      FROM plots p JOIN farms f ON f.id = p.farm_id
      WHERE crops.id = $1 AND crops.plot_id = p.id AND f.user_id = $2
      RETURNING crops.*`,
     [id, userId, crop_type, variety, planting_date || null, expected_harvest_date || null,
-     growing_method, seed_source, goal, status, quantity_planted, quantity_unit,
-     fertiliser_used, notes]
+     growing_method, seed_source, goal, status, quantity_planted, quantity_unit, notes]
   );
 }
 
