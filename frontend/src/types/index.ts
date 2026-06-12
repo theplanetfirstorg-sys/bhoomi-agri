@@ -57,9 +57,13 @@ export interface Crop {
   variety: string | null;
   planting_date: string | null;
   expected_harvest_date: string | null;
+  actual_harvest_date: string | null;
   growing_method: string;
+  seed_source: string | null;
   goal: string;
   status: 'active' | 'harvested' | 'failed' | 'removed';
+  quantity_planted: number | null;
+  quantity_unit: string | null;
   notes: string | null;
   plot_name?: string;
   farm_name?: string;
