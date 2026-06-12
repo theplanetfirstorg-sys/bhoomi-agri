@@ -32,6 +32,6 @@ export const useAuthStore = create<AuthState>()(
 );
 
 export function useAuth() {
-  const { user, accessToken, isAuthenticated, logout } = useAuthStore();
-  return { user, accessToken, isAuthenticated, logout };
+  const { user, accessToken, logout } = useAuthStore();
+  return { user, accessToken, isAuthenticated: !!accessToken, logout };
 }
