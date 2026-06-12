@@ -33,6 +33,16 @@ router.post('/plots/:plotId', requireSubscription, async (req: Request, res: Res
   }
 });
 
+router.put('/:id', requireSubscription, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const crop = await cropService.updateCrop(req.params.id, req.user!.userId, req.body);
+    if (!crop) { res.status(404).json({ error: 'Crop not found' }); return; }
+    res.json({ crop });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to update crop' });
+  }
+});
+
 // Generate care plan for a crop
 router.post('/:id/care-plan', requireSubscription, async (req: Request, res: Response): Promise<void> => {
   const crop = await cropService.getCropById(req.params.id, req.user!.userId);

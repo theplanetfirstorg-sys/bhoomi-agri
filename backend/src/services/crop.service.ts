@@ -78,6 +78,33 @@ export async function updateCropStatus(
   );
 }
 
+export async function updateCrop(id: string, userId: string, data: Partial<Crop>): Promise<Crop | null> {
+  const { crop_type, variety, planting_date, expected_harvest_date, growing_method,
+    seed_source, goal, status, quantity_planted, quantity_unit, fertiliser_used, notes } = data;
+
+  return queryOne<Crop>(
+    `UPDATE crops SET
+       crop_type = COALESCE($3, crop_type),
+       variety = COALESCE($4, variety),
+       planting_date = COALESCE($5, planting_date),
+       expected_harvest_date = COALESCE($6, expected_harvest_date),
+       growing_method = COALESCE($7, growing_method),
+       seed_source = COALESCE($8, seed_source),
+       goal = COALESCE($9, goal),
+       status = COALESCE($10, status),
+       quantity_planted = COALESCE($11, quantity_planted),
+       quantity_unit = COALESCE($12, quantity_unit),
+       fertiliser_used = COALESCE($13, fertiliser_used),
+       notes = COALESCE($14, notes)
+     FROM plots p JOIN farms f ON f.id = p.farm_id
+     WHERE crops.id = $1 AND crops.plot_id = p.id AND f.user_id = $2
+     RETURNING crops.*`,
+    [id, userId, crop_type, variety, planting_date || null, expected_harvest_date || null,
+     growing_method, seed_source, goal, status, quantity_planted, quantity_unit,
+     fertiliser_used, notes]
+  );
+}
+
 // ─── Care Plans ──────────────────────────────────────────────────────────────
 
 export async function getCarePlan(cropId: string, userId: string): Promise<CarePlan | null> {

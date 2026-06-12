@@ -8,6 +8,8 @@ export const cropsApi = {
   get: (id: string) => api.get<{ crop: Crop }>(`/crops/${id}`).then((r) => r.data.crop),
   create: (plotId: string, data: Partial<Crop>) =>
     api.post<{ crop: Crop }>(`/crops/plots/${plotId}`, data).then((r) => r.data.crop),
+  update: (cropId: string, data: Partial<Crop>) =>
+    api.put<{ crop: Crop }>(`/crops/${cropId}`, data).then((r) => r.data.crop),
   generateCarePlan: (cropId: string) =>
     api.post<{ plan: CarePlan }>(`/crops/${cropId}/care-plan`).then((r) => r.data.plan),
   getCarePlan: (cropId: string) =>
